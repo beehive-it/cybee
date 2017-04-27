@@ -179,13 +179,11 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 
 		// Start logic
 		// Create a var from Transaction structure
-		var trans AllTx
-		// Read that structure for Transaction Index
-		json.Unmarshal(txAsbytes, &trans)
-		var founded AllTx
-
-		alAsbytes, _ := json.Marshal(founded)
-		return alAsbytes, nil
+		var trans AllTx		
+		// Read that structure for Transaction Index		
+		json.Unmarshal(txAsbytes, &trans)		
+		jsonAsBytes, _ := json.Marshal(trans)		
+		return jsonAsBytes, nil
 	} else if fun == "findLatestBySeller" {
 		if len(args) != 3 {
 			return nil, errors.New("Incorrect number of arguments. Expecting function name and name of the var to query")
