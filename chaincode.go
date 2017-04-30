@@ -29,7 +29,7 @@ import (
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
-
+//GOAMARA KASHER BORI
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
 }
