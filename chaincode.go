@@ -323,6 +323,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 			return ti
 		}
 		var jsonFinal chart
+		var jsonAs []byte
 		var jsonAsTrs AllTx
 		//var jsonAsTr AllTx
 		var getBranch func(string, AllTx, int)
@@ -337,25 +338,22 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 			var tii string
 			tii = ""
 			count := 0
+			ttr := str
 
 		T:
 			at, ls = findIndex(str, trans)
 			if ls == ff {
 				lt = ls - 2
-				fmt.Println(str)
-				fmt.Println(lt)
 			}
 
-			if str == "1" {
+			if ttr == "1" {
 				str, _, tii = getPrev(str, "")
 
-				fmt.Println(ls)
 				if count < 1 {
 					prt.TXs = append(prt.TXs, trans.TXs[ff])
 					count++
 					goto T
 				}
-
 				return prt, inf
 
 			} else if at.Prev_Transaction_id != "" {
@@ -369,11 +367,9 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 
 					if to == td {
 						getBranch(str, prt, q)
-						//lt--
 						return prt, inf
 					} else {
 						str, _, tii = getPrev(str, "")
-						//lt--
 						prt.TXs = append(prt.TXs, at)
 						goto T
 
@@ -381,7 +377,6 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 					q--
 				} else {
 					str, _, tii = getPrev(str, "")
-					//lt--
 					prt.TXs = append(prt.TXs, at)
 					goto T
 
@@ -408,9 +403,14 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 
 					jsonAsTr, _ = getAll(trans.TXs[q].Prev_Transaction_id, q, founded)
 					jsonFinal.TDs = append(jsonFinal.TDs, jsonAsTr)
-
+					// jsonAs, _ = json.Marshal(jsonFinal)
+					// 				fmt.Println(string(jsonAs))
+					// 				fmt.Println("----------------------")
 					jsonAsTr, _ = getAll(trans.TXs[q-1].Prev_Transaction_id, q-1, founded)
 					jsonFinal.TDs = append(jsonFinal.TDs, jsonAsTr)
+					jsonAs, _ = json.Marshal(jsonFinal)
+					// fmt.Println(string(jsonAs))
+					// 				fmt.Println("----------------------")
 					return
 				}
 				q--
