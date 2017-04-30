@@ -419,7 +419,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 			return
 		}
 
-		str, _, _ = getPrev(str, "")
+		//str, _, _ = getPrev(str, "")
 
 		jsonAsTrs, inf = getAll(str, 0, founded)
 
