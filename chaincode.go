@@ -198,6 +198,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	if fun == "read" {
 		var prid string
 		q := 0
+		lc := 0
 		if len(args) != 2 {
 			return nil, errors.New("Incorrect number of arguments. Expecting function name and name of the var to query")
 		}
@@ -230,9 +231,10 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 			}
 			q++
 		}
-		//var tid, std string
+		vn := len(foun.TXs)
+		//var jsonAsTr AllTx
 		var getAll func(string, int, AllTx) AllTx
-		//var n int
+
 		getPrev := func(str string, tid string) (string, int, string) {
 			var m, tii string
 			var ind, n int
@@ -264,6 +266,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 				prid = rpl.Replace(sp[8])
 				tn := sp[3]
 				if tid != "" {
+					//tn = tid
 
 				}
 				t := 0
@@ -277,13 +280,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 						copy(a[0:], a[1:])
 						a[len(a)-1] = 0
 						a = a[:len(a)-1]
-
-						t, err := strconv.Atoi(string(a))
-						if err != nil {
-							fmt.Println(err)
-						}
-						tm, _ := strconv.Atoi(trans.TXs[i].Id)
-						if t == tm {
+						if string(a) == trans.TXs[i].Id {
 							ind = i
 							break
 						}
@@ -296,6 +293,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 			return m, n, tii
 
 		}
+		//var inField func(string, AllTx) int
 		inField := func(ssd string, spd string, trans AllTx) int {
 			var ti int
 
@@ -307,14 +305,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 					copy(a[0:], a[1:])
 					a[len(a)-1] = 0
 					a = a[:len(a)-1]
-
-					t, err := strconv.Atoi(string(a))
-					if err != nil {
-						fmt.Println(err)
-					}
-					tm, _ := strconv.Atoi(trans.TXs[z].Id)
-
-					if t == tm && spd == trans.TXs[z].Prev_Transaction_id {
+					if string(a) == trans.TXs[z].Id && spd == trans.TXs[z].Prev_Transaction_id {
 						ti = z
 						return ti
 					}
@@ -328,60 +319,89 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 
 		var jsonFinal chart
 		var jsonAsTrs AllTx
-		var tii string
+		var tid, tii, std string
 		var getBranch func(string, AllTx, int)
 		str := args[1]
 
+		var n int
+		//co := 0
+		count := ""
 		getAll = func(str string, ff int, prt AllTx) AllTx {
 			var at Transaction
 			var tk int
 			tii = ""
 
 			q = ff
-
-			if q > 0 {
-				to := trans.TXs[q].Id
+			if q > 0 && str != "1" {
+				tn := "0"
 				td := trans.TXs[q-1].Id
+				to := trans.TXs[q].Id
+				if vn > 1 {
+					tn = trans.TXs[q+1].Id
+				}
 
-				fmt.Println(q)
 				if to == td {
-					getBranch(str, prt, q)
-				} else if q > 0 {
+					count = str
+					getBranch(str, prt, q-1)
+				} else if to == tn {
+					count = str
+					getBranch(str, prt, q+1)
+				} else {
 					str, q, tii = getPrev(str, "")
 					tk = inField(tii, str, trans)
 					at = trans.TXs[tk]
+
 					prt.TXs = append(prt.TXs, at)
 					jsonFinal.TDs = append(jsonFinal.TDs, prt)
 					jsonAsTrs = getAll(str, tk, founded)
-					return prt
+
 				}
-				q--
-			} else {
-				return prt
+
 			}
+			if str == "1" && len(count) > 0 && lc == 0 {
+				at = trans.TXs[ff]
+				prt.TXs = append(prt.TXs, at)
+				lc++
+			}
+
+			if len(count) > 0 {
+				str, q, tii = getPrev(count, "")
+				tk = inField(tii, str, trans)
+				at = trans.TXs[tk]
+
+				prt.TXs = append(prt.TXs, at)
+				count = ""
+				jsonFinal.TDs = append(jsonFinal.TDs, prt)
+				jsonAsTrs = getAll(str, tk, founded)
+
+			}
+
 			return prt
 
 		}
+
 		getBranch = func(str string, jsonAsTr AllTx, q int) {
-			if q > 0 {
-				to := trans.TXs[q].Id
-				td := trans.TXs[q-1].Id
-				tm := q
-				if to == td {
-					q--
-					foun.TXs = append(foun.TXs, trans.TXs[tm])
-					jsonAsTrs = getAll(trans.TXs[tm].Prev_Transaction_id, q, founded)
-					jsonAsTrs = getAll(trans.TXs[tm-1].Prev_Transaction_id, tm-1, founded)
-
-					return
-				}
-
+			tn := "0"
+			td := trans.TXs[q-1].Id
+			to := trans.TXs[q].Id
+			if vn > 1 {
+				tn = trans.TXs[q+1].Id
+			}
+			if to == td {
+				fmt.Println("Loop 3")
+				jsonAsTrs = getAll(trans.TXs[q].Prev_Transaction_id, q, founded)
+			} else if to == tn {
+				fmt.Println("Loop 4")
+				jsonAsTrs = getAll(trans.TXs[q].Prev_Transaction_id, q, founded)
 			}
 			return
 		}
 
-		// std, n, tid = getPrev(str, "")
-		// 		n = inField("", str, trans)
+		std, n, tid = getPrev(str, "")
+		n = inField("", str, trans)
+		fmt.Println(n)
+		fmt.Println(std)
+		fmt.Println(tid)
 		jsonAsTrs = getAll(str, 1, founded)
 		jsonAsBy, _ := json.Marshal(jsonFinal)
 		return jsonAsBy, nil
